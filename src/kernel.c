@@ -37,6 +37,9 @@ void kernel_main(void) {
     char prefix[] = "> ";
     int running = 1;
     
+    // Initialize graphics (will display on QEMU window)
+    initGraphics();
+    
     writeOut(WELCOME_TEXT), BreakLine(2);
     
     while (running == 1) {

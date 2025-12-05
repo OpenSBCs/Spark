@@ -1,12 +1,30 @@
 #include "uart.h"
+#include "drivers/graphicsDriver.h"
 #include "../package.h"
 
-// writeOut
+// Graphics mode flag (0 = UART only, 1 = Graphics + UART)
+static int graphics_enabled = 0;
+
+// Initialize graphics mode
+void initGraphics(void) {
+    gfx_init();
+    graphics_enabled = 1;
+}
+
+// writeOut - outputs to both UART and graphics (if enabled)
 
 void writeOut(const char *s) {
     while (*s) {
+        // Always write to UART
         while (*UART0_FR & UART0_FR_TXFF);
-        *UART0_DR = *s++;
+        *UART0_DR = *s;
+        
+        // Also write to graphics if enabled
+        if (graphics_enabled) {
+            gfx_putchar(*s);
+        }
+        
+        s++;
     }
 }
 

@@ -3,6 +3,7 @@
 
 typedef unsigned long size_t;
 
+void initGraphics(void);
 void writeOut(const char *s);
 void writeOutNum(long num);
 void BreakLine(int index);
