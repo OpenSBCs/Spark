@@ -1,20 +1,26 @@
 #ifndef STRINGS_H
 #define STRINGS_H
 
-// Help text
+// Help text - displayed in two columns to fit on screen
 static const char *HELP_TEXT = 
-    "+-------(Help)-------+\n"
-    "  help    - Show this help\n"
-    "  credits - Shows the credits\n"
-    "  repo    - Get the source link\n"
-    "  net     - Show network info\n"
-    "  ip      - Show current IP\n"
-    "  setip   - Set IP (setip x.x.x.x)\n"
-    "  listen  - Listen for pings\n"
-    "  exit    - Exit Spark\n"
-    "+-----------------------+";
+    "+====================================================================+\n"
+    "|                                                                    |\n"
+    "|  GENERAL                           FILESYSTEM                      |\n"
+    "|    help        Show help menu        ls          List files        |\n"
+    "|    credits     Show credits          cat <file>  Show file content |\n"
+    "|    repo        Show source link      touch <f>   Create empty file |\n"
+    "|    exit        Shutdown Spark        mkdir <dir> Create directory  |\n"
+    "|                                      rm <name>   Remove file/dir   |\n"
+    "|  NETWORK INFO                                                      |\n"
+    "|    net / ip / subnet / router / dns NETWORK TOOLS                  |\n"
+    "|                                      ping <host> Ping IP/domain    |\n"
+    "|  NETWORK CONFIG                      scan        Scan hosts (ARP)  |\n"
+    "|    dhcp / setip / subnet / router    listen      Listen packets    |\n"
+    "|    dns <ip>    Set DNS server                                      |\n"
+    "|                                                                    |\n"
+    "+====================================================================+\n";
 
-static const char *CREDITS = "Spark is made and developed by syntaxMORG0   \n";
+static const char *CREDITS = "Spark is made and developed by syntaxMORG0 and Samuraien2\n";
 static const char *REPO_DETAILS = "View the spark project here: https://github.com/syntaxMORG0/Spark\n";
 
 // Welcome message

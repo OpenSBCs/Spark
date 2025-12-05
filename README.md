@@ -17,4 +17,7 @@ Install qemu ARM to test, deveolop, change and customize Spark
 
 **Credits**
 -
+
+Using a open source Network Driver and graphicsDriver
+
 Made by Samuraien2 and syntaxMORG0

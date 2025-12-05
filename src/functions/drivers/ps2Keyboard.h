@@ -65,6 +65,7 @@ static const char scancode_set2_shift[256] = {
 
 static int shift_pressed = 0;
 static int release_next = 0;
+static int ctrl_pressed = 0;
 
 // Initialize PS/2 keyboard
 static void ps2_init(void) {

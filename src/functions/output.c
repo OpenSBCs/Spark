@@ -5,6 +5,31 @@
 // Graphics mode flag (0 = UART only, 1 = Graphics + UART)
 static int graphics_enabled = 0;
 
+// Software division helper for ARM (no hardware divider)
+static unsigned int soft_div(unsigned int n, unsigned int d) {
+    unsigned int q = 0;
+    unsigned int r = 0;
+    for (int i = 31; i >= 0; i--) {
+        r = (r << 1) | ((n >> i) & 1);
+        if (r >= d) {
+            r -= d;
+            q |= (1U << i);
+        }
+    }
+    return q;
+}
+
+static unsigned int soft_mod(unsigned int n, unsigned int d) {
+    unsigned int r = 0;
+    for (int i = 31; i >= 0; i--) {
+        r = (r << 1) | ((n >> i) & 1);
+        if (r >= d) {
+            r -= d;
+        }
+    }
+    return r;
+}
+
 // Initialize graphics mode
 void initGraphics(void) {
     gfx_init();
@@ -35,16 +60,18 @@ void writeOutNum(long num) {
     int i = 0;
 
     if (num == 0) {
+        writeOut("0");
         return;
     }
     
     if (num < 0) {
+        writeOut("-");
         num = -num;
     }
     
     while (num > 0) {
-        buffer[i++] = (num % 10) + '0';
-        num /= 10;
+        buffer[i++] = soft_mod(num, 10) + '0';
+        num = soft_div(num, 10);
     }
     for (int j = i - 1; j >= 0; j--) {
         char c[2] = {buffer[j], '\0'};
