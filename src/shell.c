@@ -1,19 +1,24 @@
 #include "package.h"
-#include "strings.h"
 #include "print.h"
 
 void setup_process(void);  // Forward declaration
 
 int sh_exec(const char *cmd) {
-    if (strcmp(cmd, "help") == 0 || strcmp(cmd, "") == 0) {
-        writeOut(HELP_TEXT);
-        newline(1);
+    if (strcmp(cmd, "help") == 0) {
+        print(
+            "COMMANDS\n"
+            "  help      Show this help menu\n"
+            "  about     Show info about Spark\n"
+            "  exit      Shutdown Spark\n"
+            "  setup     Run setup wizard\n"
+            "\n"
+        );
     }
-    else if (strcmp(cmd, "credits") == 0) {
-        print("Spark is made and developed by syntaxMORG0 and Samuraien2\n");
-    }
-    else if (strcmp(cmd, "repo") == 0) {
-        print("View the spark project here: https://github.com/syntaxMORG0/Spark\n");
+    else if (strcmp(cmd, "about") == 0) {
+        print(
+            "Spark v1.0 - Developed by syntaxMORG0 and Samuraien2\n"
+            "Github Repo: https://github.com/syntaxMORG0/Spark\n"
+        );
     }
     else if (strcmp(cmd, "exit") == 0) {
         return 66;
