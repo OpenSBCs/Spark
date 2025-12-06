@@ -16,7 +16,7 @@ int sh_exec(const char *cmd) {
     }
     else if (strcmp(cmd, "about") == 0) {
         print(
-            "Spark is Developed by syntaxMORG0 and Samuraien2\n"
+            "Spark is developed by syntaxMORG0 and Samuraien2\n"
             "You can find the Spark project at https://github.com/OpenSBCs/Spark\n"
         );
     }
