@@ -23,7 +23,7 @@ int sh_exec(const char *cmd) {
     else if (strcmp(cmd, "exit") == 0) {
         return 66;
     }
-    else if (strcmp(cmd, "setup") == 0) {
+    else if (strcmp(cmd, "setup") == 0 || strcmp(cmd, "ssw") == 0) {
         setup_process();
     }
     else if (cmd[0] != '\0') {
