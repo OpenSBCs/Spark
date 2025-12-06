@@ -7,17 +7,17 @@ int sh_exec(const char *cmd) {
     if (strcmp(cmd, "help") == 0) {
         print(
             "COMMANDS\n"
-            "  help      Show this help menu\n"
-            "  about     Show info about Spark\n"
-            "  exit      Shutdown Spark\n"
-            "  setup     Run setup wizard\n"
+            "  help          Show this help menu\n"
+            "  about         Show info about Spark\n"
+            "  exit          Shutdown Spark\n"
+            "  setup/ssw     Run setup wizard\n"
             "\n"
         );
     }
     else if (strcmp(cmd, "about") == 0) {
         print(
-            "Spark v1.0 - Developed by syntaxMORG0 and Samuraien2\n"
-            "Github Repo: https://github.com/syntaxMORG0/Spark\n"
+            "Spark is Developed by syntaxMORG0 and Samuraien2\n"
+            "You can find the Spark project at https://github.com/OpenSBCs/Spark\n"
         );
     }
     else if (strcmp(cmd, "exit") == 0) {

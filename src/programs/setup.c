@@ -22,7 +22,7 @@ void setup_process(void) {
             newline(2);
         }
         else if (strcmp(buffer, "spm") == 0) {
-            writeOut("SPM (Spark Package Manager) comming soon"), newline(1);
+            writeOut("snatch (Spark Package Manager) comming soon"), newline(1);
         }
         else {
             writeOut("unknown command: "), writeOut(buffer), newline(1);

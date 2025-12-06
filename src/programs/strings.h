@@ -4,7 +4,7 @@
     "SSW COMMANDS\n"
     "  help      Show help menu\n"
     "  exit      Exit Setup\n"
-    "  spm       Install SPM (Spark Package Manager)\n"
+    "  snatch    Install Snatch (Spark Package Manager)\n"
     "  part      Setup a disk partion"
     ;
 #endif
