@@ -1,9 +1,11 @@
 /*
  * filesystem.h - Simple in-memory file system for Spark OS
- * 
+ *
  * This is a basic RAM-based filesystem that stores files in memory.
  * Files are lost when the system reboots.
  */
+#include "../../package.h"
+
 
 #ifndef FILESYSTEM_H
 #define FILESYSTEM_H
@@ -40,7 +42,7 @@ static int fs_initialized = 0;
  */
 static void fs_init(void) {
     if (fs_initialized) return;
-    
+
     // Clear all entries
     for (int i = 0; i < FS_MAX_FILES; i++) {
         filesystem[i].used = 0;
@@ -49,55 +51,55 @@ static void fs_init(void) {
         filesystem[i].type = 0;
         filesystem[i].size = 0;
     }
-    
+
     // Create some default files
     // File 0: readme.txt
     filesystem[0].used = 1;
     filesystem[0].type = FS_TYPE_FILE;
     filesystem[0].size = 45;
-    
+
     // Copy filename
     const char *name0 = "readme.txt";
     for (int i = 0; name0[i] != '\0' && i < FS_MAX_NAME-1; i++) {
         filesystem[0].name[i] = name0[i];
         filesystem[0].name[i+1] = '\0';
     }
-    
+
     // Copy content
     const char *content0 = "Welcome to Spark OS!\nType 'help' for commands.";
     for (int i = 0; content0[i] != '\0' && i < FS_MAX_CONTENT-1; i++) {
         filesystem[0].content[i] = content0[i];
         filesystem[0].content[i+1] = '\0';
     }
-    
+
     // File 1: hello.txt
     filesystem[1].used = 1;
     filesystem[1].type = FS_TYPE_FILE;
     filesystem[1].size = 12;
-    
+
     const char *name1 = "hello.txt";
     for (int i = 0; name1[i] != '\0' && i < FS_MAX_NAME-1; i++) {
         filesystem[1].name[i] = name1[i];
         filesystem[1].name[i+1] = '\0';
     }
-    
+
     const char *content1 = "Hello World!";
     for (int i = 0; content1[i] != '\0' && i < FS_MAX_CONTENT-1; i++) {
         filesystem[1].content[i] = content1[i];
         filesystem[1].content[i+1] = '\0';
     }
-    
+
     // File 2: notes directory
     filesystem[2].used = 1;
     filesystem[2].type = FS_TYPE_DIR;
     filesystem[2].size = 0;
-    
+
     const char *name2 = "notes";
     for (int i = 0; name2[i] != '\0' && i < FS_MAX_NAME-1; i++) {
         filesystem[2].name[i] = name2[i];
         filesystem[2].name[i+1] = '\0';
     }
-    
+
     fs_initialized = 1;
 }
 
@@ -106,10 +108,10 @@ static void fs_init(void) {
  */
 static void fs_list(void) {
     fs_init();
-    
+
     writeOut("Directory: /\n");
     writeOut("-------------------\n");
-    
+
     int count = 0;
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used) {
@@ -119,27 +121,27 @@ static void fs_list(void) {
             } else {
                 writeOut("[FILE] ");
             }
-            
+
             // Show name
             writeOut(filesystem[i].name);
-            
+
             // Show size for files
             if (filesystem[i].type == FS_TYPE_FILE) {
                 writeOut("  (");
                 writeOutNum(filesystem[i].size);
                 writeOut(" bytes)");
             }
-            
-            BreakLine(1);
+
+            newline(1);
             count++;
         }
     }
-    
+
     if (count == 0) {
         writeOut("(empty)\n");
     }
-    
-    BreakLine(1);
+
+    newline(1);
     writeOutNum(count);
     writeOut(" items\n");
 }
@@ -149,7 +151,7 @@ static void fs_list(void) {
  */
 static void fs_cat(const char *filename) {
     fs_init();
-    
+
     // Find the file
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used && filesystem[i].type == FS_TYPE_FILE) {
@@ -163,18 +165,18 @@ static void fs_cat(const char *filename) {
                 }
                 j++;
             }
-            
+
             if (match) {
                 writeOut(filesystem[i].content);
-                BreakLine(1);
+                newline(1);
                 return;
             }
         }
     }
-    
+
     writeOut("File not found: ");
     writeOut(filename);
-    BreakLine(1);
+    newline(1);
 }
 
 /*
@@ -182,7 +184,7 @@ static void fs_cat(const char *filename) {
  */
 static void fs_touch(const char *filename) {
     fs_init();
-    
+
     // Check if file already exists
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used) {
@@ -198,12 +200,12 @@ static void fs_touch(const char *filename) {
             if (match) {
                 writeOut("File already exists: ");
                 writeOut(filename);
-                BreakLine(1);
+                newline(1);
                 return;
             }
         }
     }
-    
+
     // Find empty slot
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (!filesystem[i].used) {
@@ -211,7 +213,7 @@ static void fs_touch(const char *filename) {
             filesystem[i].type = FS_TYPE_FILE;
             filesystem[i].size = 0;
             filesystem[i].content[0] = '\0';
-            
+
             // Copy filename
             int j = 0;
             while (filename[j] != '\0' && j < FS_MAX_NAME-1) {
@@ -219,14 +221,14 @@ static void fs_touch(const char *filename) {
                 j++;
             }
             filesystem[i].name[j] = '\0';
-            
+
             writeOut("Created: ");
             writeOut(filename);
-            BreakLine(1);
+            newline(1);
             return;
         }
     }
-    
+
     writeOut("Filesystem full!\n");
 }
 
@@ -235,7 +237,7 @@ static void fs_touch(const char *filename) {
  */
 static void fs_mkdir(const char *dirname) {
     fs_init();
-    
+
     // Check if already exists
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used) {
@@ -251,19 +253,19 @@ static void fs_mkdir(const char *dirname) {
             if (match) {
                 writeOut("Already exists: ");
                 writeOut(dirname);
-                BreakLine(1);
+                newline(1);
                 return;
             }
         }
     }
-    
+
     // Find empty slot
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (!filesystem[i].used) {
             filesystem[i].used = 1;
             filesystem[i].type = FS_TYPE_DIR;
             filesystem[i].size = 0;
-            
+
             // Copy dirname
             int j = 0;
             while (dirname[j] != '\0' && j < FS_MAX_NAME-1) {
@@ -271,14 +273,14 @@ static void fs_mkdir(const char *dirname) {
                 j++;
             }
             filesystem[i].name[j] = '\0';
-            
+
             writeOut("Created directory: ");
             writeOut(dirname);
-            BreakLine(1);
+            newline(1);
             return;
         }
     }
-    
+
     writeOut("Filesystem full!\n");
 }
 
@@ -287,7 +289,7 @@ static void fs_mkdir(const char *dirname) {
  */
 static void fs_rm(const char *name) {
     fs_init();
-    
+
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used) {
             int match = 1;
@@ -299,22 +301,22 @@ static void fs_rm(const char *name) {
                 }
                 j++;
             }
-            
+
             if (match) {
                 filesystem[i].used = 0;
                 filesystem[i].name[0] = '\0';
                 filesystem[i].content[0] = '\0';
                 writeOut("Removed: ");
                 writeOut(name);
-                BreakLine(1);
+                newline(1);
                 return;
             }
         }
     }
-    
+
     writeOut("Not found: ");
     writeOut(name);
-    BreakLine(1);
+    newline(1);
 }
 
 /*
@@ -322,7 +324,7 @@ static void fs_rm(const char *name) {
  */
 static void fs_write(const char *filename, const char *content) {
     fs_init();
-    
+
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used && filesystem[i].type == FS_TYPE_FILE) {
             int match = 1;
@@ -334,7 +336,7 @@ static void fs_write(const char *filename, const char *content) {
                 }
                 j++;
             }
-            
+
             if (match) {
                 // Copy content
                 int k = 0;
@@ -344,20 +346,20 @@ static void fs_write(const char *filename, const char *content) {
                 }
                 filesystem[i].content[k] = '\0';
                 filesystem[i].size = k;
-                
+
                 writeOut("Wrote ");
                 writeOutNum(k);
                 writeOut(" bytes to ");
                 writeOut(filename);
-                BreakLine(1);
+                newline(1);
                 return;
             }
         }
     }
-    
+
     writeOut("File not found: ");
     writeOut(filename);
-    BreakLine(1);
+    newline(1);
 }
 
 /*
@@ -365,7 +367,7 @@ static void fs_write(const char *filename, const char *content) {
  */
 static int fs_find(const char *filename) {
     fs_init();
-    
+
     for (int i = 0; i < FS_MAX_FILES; i++) {
         if (filesystem[i].used) {
             int match = 1;

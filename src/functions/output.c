@@ -43,12 +43,12 @@ void writeOut(const char *s) {
         // Always write to UART
         while (*UART0_FR & UART0_FR_TXFF);
         *UART0_DR = *s;
-        
+
         // Also write to graphics if enabled
         if (graphics_enabled) {
             gfx_putchar(*s);
         }
-        
+
         s++;
     }
 }
@@ -63,12 +63,12 @@ void writeOutNum(long num) {
         writeOut("0");
         return;
     }
-    
+
     if (num < 0) {
         writeOut("-");
         num = -num;
     }
-    
+
     while (num > 0) {
         buffer[i++] = soft_mod(num, 10) + '0';
         num = soft_div(num, 10);
@@ -81,8 +81,8 @@ void writeOutNum(long num) {
 
 // breakline
 
-void BreakLine(int index) {
-    for (int i = 0; i < index; i++) {
+void BreakLine(int times) {
+    for (int i = 0; i < times; i++) {
         writeOut("\n");
     }
 }

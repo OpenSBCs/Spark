@@ -226,28 +226,28 @@ static inline void eth_select_bank(int bank) {
 static int net_init(void) {
     // Select bank 0
     eth_select_bank(0);
-    
+
     // Reset transmit and receive
     *ETH_RCR = 0x8000;  // Soft reset
     *ETH_RCR = 0x0000;  // Clear reset
-    
+
     // Small delay
     for (volatile int i = 0; i < 10000; i++);
-    
+
     // Select bank 1 to set MAC address
     eth_select_bank(1);
     *ETH_IA0_1 = mac_address[0] | (mac_address[1] << 8);
     *ETH_IA2_3 = mac_address[2] | (mac_address[3] << 8);
     *ETH_IA4_5 = mac_address[4] | (mac_address[5] << 8);
-    
+
     // Enable auto-release of transmitted packets
     *ETH_CONTROL = 0x0800;
-    
+
     // Select bank 0, enable TX and RX
     eth_select_bank(0);
     *ETH_TCR = TCR_ENABLE;
     *ETH_RCR = RCR_ENABLE | RCR_STRIP_CRC;
-    
+
     return 0;  // Success
 }
 
@@ -313,10 +313,10 @@ static int net_receive(unsigned char *buffer, int max_len) {
 // len: length of payload
 static int net_send(unsigned char *dst, unsigned short ethertype, unsigned char *data, int len) {
     eth_select_bank(2);
-    
+
     // Allocate memory for TX
     *ETH_MMU_CMD = 0x0020;  // Allocate TX memory
-    
+
     // Wait for allocation (with timeout)
     int timeout = 10000;
     while (timeout-- > 0) {
@@ -328,37 +328,37 @@ static int net_send(unsigned char *dst, unsigned short ethertype, unsigned char 
     if (timeout <= 0) {
         return -1;  // Allocation failed
     }
-    
+
     // Get allocated packet number
     eth_select_bank(2);
     unsigned char pkt_num = (*ETH_PNR >> 8) & 0x3F;
-    
+
     // Set packet number for writing
     *ETH_PNR = pkt_num;
-    
+
     // Set pointer to start of packet data area, auto-increment, write
     *ETH_POINTER = 0x4000;  // Auto-increment + write
-    
+
     // Write status word (will be filled by hardware)
     *ETH_DATA = 0x0000;
-    
+
     // Write packet length (header + data + control byte)
     int total_len = 14 + len;  // 14 = ethernet header
     *ETH_DATA = (unsigned short)(total_len + 6);  // +6 for status/length/control
-    
+
     // Write destination MAC
     *ETH_DATA = dst[0] | (dst[1] << 8);
     *ETH_DATA = dst[2] | (dst[3] << 8);
     *ETH_DATA = dst[4] | (dst[5] << 8);
-    
+
     // Write source MAC (our MAC)
     *ETH_DATA = mac_address[0] | (mac_address[1] << 8);
     *ETH_DATA = mac_address[2] | (mac_address[3] << 8);
     *ETH_DATA = mac_address[4] | (mac_address[5] << 8);
-    
+
     // Write ethertype (big endian on wire)
     *ETH_DATA = ((ethertype >> 8) & 0xFF) | ((ethertype & 0xFF) << 8);
-    
+
     // Write payload data
     for (int i = 0; i < len; i += 2) {
         unsigned short word = data[i];
@@ -367,17 +367,17 @@ static int net_send(unsigned char *dst, unsigned short ethertype, unsigned char 
         }
         *ETH_DATA = word;
     }
-    
+
     // Write control byte (odd/even indicator)
     if (total_len & 1) {
         *ETH_DATA = 0x2000;  // Odd length, control byte
     } else {
         *ETH_DATA = 0x0000;
     }
-    
+
     // Enqueue packet for transmission
     *ETH_MMU_CMD = 0x00C0;  // Enqueue TX
-    
+
     return len;
 }
 
@@ -406,7 +406,7 @@ static void net_info(void) {
     net_get_gateway_string(gw_str);
     net_get_subnet_string(subnet_str);
     net_get_dns_string(dns_str);
-    
+
     writeOut("Network Driver: SMC91C111\n");
     writeOut("MAC Address:  ");
     writeOut(mac_str);
@@ -469,19 +469,19 @@ static void mem_copy(unsigned char *dst, unsigned char *src, int len) {
 // Handle incoming ARP packet
 static void handle_arp(unsigned char *packet, int len) {
     if (len < 14 + 28) return;  // Ethernet header + ARP packet
-    
+
     struct arp_packet *arp = (struct arp_packet *)(packet + 14);
-    
+
     // Check if it's an ARP request for our IP
     if (htons(arp->opcode) == ARP_REQUEST && ip_match(arp->target_ip, ip_address)) {
         // Build ARP reply
         unsigned char reply[42];  // 14 (eth) + 28 (arp)
-        
+
         // Ethernet header - send to requester
         mem_copy(reply, arp->sender_mac, 6);       // Destination MAC
         mem_copy(reply + 6, mac_address, 6);       // Source MAC (us)
         reply[12] = 0x08; reply[13] = 0x06;        // EtherType = ARP
-        
+
         // ARP reply
         struct arp_packet *reply_arp = (struct arp_packet *)(reply + 14);
         reply_arp->hw_type = htons(1);             // Ethernet
@@ -493,7 +493,7 @@ static void handle_arp(unsigned char *packet, int len) {
         mem_copy(reply_arp->sender_ip, ip_address, 4);
         mem_copy(reply_arp->target_mac, arp->sender_mac, 6);
         mem_copy(reply_arp->target_ip, arp->sender_ip, 4);
-        
+
         // Send reply
         net_send(arp->sender_mac, ETH_TYPE_ARP, reply + 14, 28);
     }
@@ -530,7 +530,7 @@ struct icmp_header {
 // Calculate checksum
 static unsigned short checksum(unsigned char *data, int len) {
     unsigned long sum = 0;
-    
+
     while (len > 1) {
         sum += (data[0] << 8) | data[1];
         data += 2;
@@ -539,11 +539,11 @@ static unsigned short checksum(unsigned char *data, int len) {
     if (len == 1) {
         sum += data[0] << 8;
     }
-    
+
     while (sum >> 16) {
         sum = (sum & 0xFFFF) + (sum >> 16);
     }
-    
+
     return (unsigned short)(~sum);
 }
 
@@ -552,20 +552,20 @@ static void handle_icmp(unsigned char *packet, int len) {
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     int ip_hdr_len = (ip->version_ihl & 0x0F) * 4;
     struct icmp_header *icmp = (struct icmp_header *)(packet + 14 + ip_hdr_len);
-    
+
     // Check if it's an echo request (ping) for us
     if (icmp->type == ICMP_ECHO_REQUEST && ip_match(ip->dst_ip, ip_address)) {
         int icmp_len = htons(ip->total_len) - ip_hdr_len;
-        
+
         // Build reply packet
         unsigned char reply[1500];
         int reply_len = 14 + 20 + icmp_len;  // Eth + IP + ICMP
-        
+
         // Ethernet header
         mem_copy(reply, packet + 6, 6);        // Dst = original src MAC
         mem_copy(reply + 6, mac_address, 6);   // Src = our MAC
         reply[12] = 0x08; reply[13] = 0x00;    // EtherType = IPv4
-        
+
         // IP header
         struct ip_header *reply_ip = (struct ip_header *)(reply + 14);
         reply_ip->version_ihl = 0x45;          // IPv4, 20 byte header
@@ -578,17 +578,17 @@ static void handle_icmp(unsigned char *packet, int len) {
         reply_ip->checksum = 0;
         mem_copy(reply_ip->src_ip, ip_address, 4);
         mem_copy(reply_ip->dst_ip, ip->src_ip, 4);
-        
+
         // Calculate IP checksum
         reply_ip->checksum = htons(checksum((unsigned char *)reply_ip, 20));
-        
+
         // ICMP reply (copy original, change type)
         struct icmp_header *reply_icmp = (struct icmp_header *)(reply + 14 + 20);
         mem_copy((unsigned char *)reply_icmp, (unsigned char *)icmp, icmp_len);
         reply_icmp->type = ICMP_ECHO_REPLY;
         reply_icmp->checksum = 0;
         reply_icmp->checksum = htons(checksum((unsigned char *)reply_icmp, icmp_len));
-        
+
         // Send the raw packet (bypass net_send since we built full packet)
         net_send(reply, ETH_TYPE_IP, reply + 14, 20 + icmp_len);
     }
@@ -607,16 +607,16 @@ static int net_send_ping(unsigned char *dst_ip) {
     int icmp_data_len = 32;
     int icmp_len = 8 + icmp_data_len;
     int ip_len = 20 + icmp_len;
-    
+
     // We need ARP to get the MAC - for simplicity, use gateway MAC (broadcast for now)
     // In QEMU user networking, the gateway handles routing
     unsigned char dst_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    
+
     // Ethernet header
     mem_copy(packet, dst_mac, 6);              // Destination MAC
     mem_copy(packet + 6, mac_address, 6);      // Source MAC
     packet[12] = 0x08; packet[13] = 0x00;      // EtherType = IPv4
-    
+
     // IP header
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     ip->version_ihl = 0x45;                    // IPv4, 20 byte header
@@ -630,7 +630,7 @@ static int net_send_ping(unsigned char *dst_ip) {
     mem_copy(ip->src_ip, ip_address, 4);
     mem_copy(ip->dst_ip, dst_ip, 4);
     ip->checksum = htons(checksum((unsigned char *)ip, 20));
-    
+
     // ICMP echo request
     struct icmp_header *icmp = (struct icmp_header *)(packet + 34);
     icmp->type = ICMP_ECHO_REQUEST;
@@ -638,19 +638,19 @@ static int net_send_ping(unsigned char *dst_ip) {
     icmp->checksum = 0;
     icmp->id = htons(0x1234);
     icmp->seq = htons(ping_seq++);
-    
+
     // Fill data with pattern
     unsigned char *data = packet + 42;
     for (int i = 0; i < icmp_data_len; i++) {
         data[i] = (unsigned char)(i & 0xFF);
     }
-    
+
     // Calculate ICMP checksum
     icmp->checksum = htons(checksum((unsigned char *)icmp, icmp_len));
-    
+
     // Reset reply flag
     ping_reply_received = 0;
-    
+
     // Send packet
     return net_send(dst_mac, ETH_TYPE_IP, packet + 14, ip_len);
 }
@@ -662,10 +662,10 @@ static int net_wait_ping_reply(int timeout_ms) {
     for (int i = 0; i < timeout_ms * 100; i++) {
         unsigned char packet[1500];
         int len = net_receive(packet, sizeof(packet));
-        
+
         if (len > 0) {
             unsigned short ethertype = (packet[12] << 8) | packet[13];
-            
+
             if (ethertype == ETH_TYPE_ARP) {
                 handle_arp(packet, len);
             }
@@ -674,7 +674,7 @@ static int net_wait_ping_reply(int timeout_ms) {
                 if (ip->protocol == 1) {  // ICMP
                     int ip_hdr_len = (ip->version_ihl & 0x0F) * 4;
                     struct icmp_header *icmp = (struct icmp_header *)(packet + 14 + ip_hdr_len);
-                    
+
                     if (icmp->type == ICMP_ECHO_REPLY) {
                         return 1;  // Got reply!
                     }
@@ -692,13 +692,13 @@ static int net_wait_ping_reply(int timeout_ms) {
 static void net_poll(void) {
     unsigned char packet[1500];
     int len;
-    
+
     while ((len = net_receive(packet, sizeof(packet))) > 0) {
         if (len < 14) continue;  // Too small for ethernet header
-        
+
         // Get ethertype
         unsigned short ethertype = (packet[12] << 8) | packet[13];
-        
+
         if (ethertype == ETH_TYPE_ARP) {
             handle_arp(packet, len);
         }
@@ -764,15 +764,15 @@ static int dhcp_send_discover(void) {
     unsigned char broadcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     unsigned char broadcast_ip[4] = {255, 255, 255, 255};
     unsigned char zero_ip[4] = {0, 0, 0, 0};
-    
+
     // Clear packet
     for (int i = 0; i < 590; i++) packet[i] = 0;
-    
+
     // Ethernet header
     mem_copy(packet, broadcast_mac, 6);
     mem_copy(packet + 6, mac_address, 6);
     packet[12] = 0x08; packet[13] = 0x00;  // IPv4
-    
+
     // IP header
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     ip->version_ihl = 0x45;
@@ -786,14 +786,14 @@ static int dhcp_send_discover(void) {
     mem_copy(ip->src_ip, zero_ip, 4);
     mem_copy(ip->dst_ip, broadcast_ip, 4);
     ip->checksum = htons(checksum((unsigned char *)ip, 20));
-    
+
     // UDP header
     struct udp_header *udp = (struct udp_header *)(packet + 34);
     udp->src_port = htons(DHCP_CLIENT_PORT);
     udp->dst_port = htons(DHCP_SERVER_PORT);
     udp->length = htons(8 + 548);
     udp->checksum = 0;  // Optional for IPv4
-    
+
     // DHCP packet
     struct dhcp_packet *dhcp = (struct dhcp_packet *)(packet + 42);
     dhcp->op = 1;        // Boot request
@@ -804,25 +804,25 @@ static int dhcp_send_discover(void) {
     dhcp->secs = 0;
     dhcp->flags = htons(0x8000);  // Broadcast
     mem_copy(dhcp->chaddr, mac_address, 6);
-    
+
     // DHCP options
     unsigned char *opt = dhcp->options;
     // Magic cookie
     opt[0] = 0x63; opt[1] = 0x82; opt[2] = 0x53; opt[3] = 0x63;
     opt += 4;
-    
+
     // Option 53: DHCP Message Type = Discover
     *opt++ = 53; *opt++ = 1; *opt++ = DHCP_DISCOVER;
-    
+
     // Option 55: Parameter Request List
     *opt++ = 55; *opt++ = 3;
     *opt++ = 1;   // Subnet Mask
     *opt++ = 3;   // Router
     *opt++ = 6;   // DNS
-    
+
     // End option
     *opt++ = 255;
-    
+
     // Send packet
     return net_send(broadcast_mac, ETH_TYPE_IP, packet + 14, 20 + 8 + 548);
 }
@@ -833,15 +833,15 @@ static int dhcp_send_request(void) {
     unsigned char broadcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     unsigned char broadcast_ip[4] = {255, 255, 255, 255};
     unsigned char zero_ip[4] = {0, 0, 0, 0};
-    
+
     // Clear packet
     for (int i = 0; i < 590; i++) packet[i] = 0;
-    
+
     // Ethernet header
     mem_copy(packet, broadcast_mac, 6);
     mem_copy(packet + 6, mac_address, 6);
     packet[12] = 0x08; packet[13] = 0x00;
-    
+
     // IP header
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     ip->version_ihl = 0x45;
@@ -855,14 +855,14 @@ static int dhcp_send_request(void) {
     mem_copy(ip->src_ip, zero_ip, 4);
     mem_copy(ip->dst_ip, broadcast_ip, 4);
     ip->checksum = htons(checksum((unsigned char *)ip, 20));
-    
+
     // UDP header
     struct udp_header *udp = (struct udp_header *)(packet + 34);
     udp->src_port = htons(DHCP_CLIENT_PORT);
     udp->dst_port = htons(DHCP_SERVER_PORT);
     udp->length = htons(8 + 548);
     udp->checksum = 0;
-    
+
     // DHCP packet
     struct dhcp_packet *dhcp = (struct dhcp_packet *)(packet + 42);
     dhcp->op = 1;
@@ -873,33 +873,33 @@ static int dhcp_send_request(void) {
     dhcp->secs = 0;
     dhcp->flags = htons(0x8000);
     mem_copy(dhcp->chaddr, mac_address, 6);
-    
+
     // DHCP options
     unsigned char *opt = dhcp->options;
     // Magic cookie
     opt[0] = 0x63; opt[1] = 0x82; opt[2] = 0x53; opt[3] = 0x63;
     opt += 4;
-    
+
     // Option 53: DHCP Message Type = Request
     *opt++ = 53; *opt++ = 1; *opt++ = DHCP_REQUEST;
-    
+
     // Option 50: Requested IP Address
     *opt++ = 50; *opt++ = 4;
     *opt++ = offered_ip[0]; *opt++ = offered_ip[1];
     *opt++ = offered_ip[2]; *opt++ = offered_ip[3];
-    
+
     // Option 54: Server Identifier
     *opt++ = 54; *opt++ = 4;
     *opt++ = dhcp_server_ip[0]; *opt++ = dhcp_server_ip[1];
     *opt++ = dhcp_server_ip[2]; *opt++ = dhcp_server_ip[3];
-    
+
     // Option 55: Parameter Request List
     *opt++ = 55; *opt++ = 3;
     *opt++ = 1; *opt++ = 3; *opt++ = 6;
-    
+
     // End option
     *opt++ = 255;
-    
+
     return net_send(broadcast_mac, ETH_TYPE_IP, packet + 14, 20 + 8 + 548);
 }
 
@@ -907,13 +907,13 @@ static int dhcp_send_request(void) {
 static int dhcp_parse_options(unsigned char *options, int len) {
     int msg_type = 0;
     int i = 4;  // Skip magic cookie
-    
+
     while (i < len && options[i] != 255) {
         unsigned char opt = options[i++];
         if (opt == 0) continue;  // Padding
-        
+
         unsigned char opt_len = options[i++];
-        
+
         switch (opt) {
             case 53:  // DHCP Message Type
                 msg_type = options[i];
@@ -944,22 +944,22 @@ static int handle_dhcp(unsigned char *packet, int len) {
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     int ip_hdr_len = (ip->version_ihl & 0x0F) * 4;
     struct udp_header *udp = (struct udp_header *)(packet + 14 + ip_hdr_len);
-    
+
     // Check if it's a DHCP response (from server port 67 to client port 68)
     if (htons(udp->src_port) != DHCP_SERVER_PORT) return 0;
     if (htons(udp->dst_port) != DHCP_CLIENT_PORT) return 0;
-    
+
     struct dhcp_packet *dhcp = (struct dhcp_packet *)(packet + 14 + ip_hdr_len + 8);
-    
+
     // Check transaction ID
     if (dhcp->xid != dhcp_xid) return 0;
-    
+
     // Check it's a reply
     if (dhcp->op != 2) return 0;
-    
+
     // Parse options
     int msg_type = dhcp_parse_options(dhcp->options, 312);
-    
+
     if (msg_type == DHCP_OFFER) {
         // Save offered IP
         mem_copy(offered_ip, dhcp->yiaddr, 4);
@@ -973,7 +973,7 @@ static int handle_dhcp(unsigned char *packet, int len) {
     else if (msg_type == DHCP_NAK) {
         return DHCP_NAK;
     }
-    
+
     return 0;
 }
 
@@ -984,12 +984,12 @@ static int dhcp_request(void) {
     int state = 0;  // 0 = send discover, 1 = wait offer, 2 = send request, 3 = wait ack
     int timeout;
     int retries = 3;
-    
+
     // Generate random-ish transaction ID based on MAC
-    dhcp_xid = (mac_address[2] << 24) | (mac_address[3] << 16) | 
+    dhcp_xid = (mac_address[2] << 24) | (mac_address[3] << 16) |
                (mac_address[4] << 8) | mac_address[5];
     dhcp_xid ^= 0xDEADBEEF;
-    
+
     while (retries > 0) {
         if (state == 0) {
             // Send DHCP Discover
@@ -998,7 +998,7 @@ static int dhcp_request(void) {
             state = 1;
             timeout = 300000;
         }
-        
+
         if (state == 1) {
             // Wait for DHCP Offer
             while (timeout-- > 0) {
@@ -1033,7 +1033,7 @@ static int dhcp_request(void) {
                 continue;
             }
         }
-        
+
         if (state == 2) {
             // Send DHCP Request
             writeOut("Sending DHCP Request...\n");
@@ -1041,7 +1041,7 @@ static int dhcp_request(void) {
             state = 3;
             timeout = 300000;
         }
-        
+
         if (state == 3) {
             // Wait for DHCP ACK
             while (timeout-- > 0) {
@@ -1083,7 +1083,7 @@ static int dhcp_request(void) {
             }
         }
     }
-    
+
     writeOut("DHCP failed\n");
     return 0;
 }
@@ -1095,12 +1095,12 @@ static void send_arp_request(unsigned char *target_ip) {
     unsigned char packet[42];  // 14 (eth) + 28 (arp)
     unsigned char broadcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     unsigned char zero_mac[6] = {0, 0, 0, 0, 0, 0};
-    
+
     // Ethernet header
     mem_copy(packet, broadcast_mac, 6);        // Broadcast destination
     mem_copy(packet + 6, mac_address, 6);      // Our source MAC
     packet[12] = 0x08; packet[13] = 0x06;      // EtherType = ARP
-    
+
     // ARP request
     struct arp_packet *arp = (struct arp_packet *)(packet + 14);
     arp->hw_type = htons(1);                   // Ethernet
@@ -1112,7 +1112,7 @@ static void send_arp_request(unsigned char *target_ip) {
     mem_copy(arp->sender_ip, ip_address, 4);
     mem_copy(arp->target_mac, zero_mac, 6);
     mem_copy(arp->target_ip, target_ip, 4);
-    
+
     net_send(broadcast_mac, ETH_TYPE_ARP, packet + 14, 28);
 }
 
@@ -1134,12 +1134,12 @@ static void net_scan(void) {
     unsigned char network[4];
     unsigned char scan_ip[4];
     int hosts_found = 0;
-    
+
     // Calculate network address
     for (int i = 0; i < 4; i++) {
         network[i] = ip_address[i] & subnet_mask[i];
     }
-    
+
     // Calculate number of hosts to scan based on subnet
     int host_bits = 0;
     for (int i = 0; i < 4; i++) {
@@ -1149,10 +1149,10 @@ static void net_scan(void) {
             inv >>= 1;
         }
     }
-    
+
     int max_hosts = (1 << host_bits) - 2;  // Exclude network and broadcast
     if (max_hosts > 254) max_hosts = 254;  // Limit scan to /24 max for speed
-    
+
     writeOut("Scanning network: ");
     char net_str[16];
     format_ip(network, net_str);
@@ -1163,10 +1163,10 @@ static void net_scan(void) {
     writeOut("Scanning ");
     writeOutNum(max_hosts);
     writeOut(" hosts...\n\n");
-    
+
     writeOut("IP Address       MAC Address\n");
     writeOut("---------------- -----------------\n");
-    
+
     // Scan each host in the subnet
     for (int host = 1; host <= max_hosts; host++) {
         // Calculate host IP
@@ -1174,37 +1174,37 @@ static void net_scan(void) {
         scan_ip[1] = network[1];
         scan_ip[2] = network[2];
         scan_ip[3] = network[3] + host;
-        
+
         // Handle overflow for larger subnets
         if (host_bits > 8) {
             int h = host;
             scan_ip[3] = network[3] | (h & 0xFF);
             scan_ip[2] = network[2] | ((h >> 8) & (~subnet_mask[2]));
         }
-        
+
         // Skip our own IP
         if (ip_match(scan_ip, ip_address)) continue;
-        
+
         // Send ARP request
         send_arp_request(scan_ip);
-        
+
         // Wait for reply (short timeout)
         for (int wait = 0; wait < 5000; wait++) {
             unsigned char packet[1500];
             int len = net_receive(packet, sizeof(packet));
-            
+
             if (len > 0) {
                 unsigned short ethertype = (packet[12] << 8) | packet[13];
-                
+
                 if (ethertype == ETH_TYPE_ARP) {
                     struct arp_packet *arp = (struct arp_packet *)(packet + 14);
-                    
+
                     if (htons(arp->opcode) == ARP_REPLY) {
                         char ip_str[16];
                         char mac_str[18];
                         format_ip(arp->sender_ip, ip_str);
                         format_mac(arp->sender_mac, mac_str);
-                        
+
                         // Pad IP for alignment
                         writeOut(ip_str);
                         int pad = 17 - 15;  // Approximate padding
@@ -1217,7 +1217,7 @@ static void net_scan(void) {
             }
         }
     }
-    
+
     writeOut("\n");
     writeOutNum(hosts_found);
     writeOut(" host(s) found\n");
@@ -1251,7 +1251,7 @@ static int dns_encode_name(const char *domain, unsigned char *buf) {
     int pos = 0;
     int label_start = 0;
     int i = 0;
-    
+
     while (1) {
         if (domain[i] == '.' || domain[i] == '\0') {
             int label_len = i - label_start;
@@ -1272,15 +1272,15 @@ static int dns_encode_name(const char *domain, unsigned char *buf) {
 static int dns_send_query(const char *domain) {
     unsigned char packet[512];
     unsigned char broadcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    
+
     // Clear packet
     for (int i = 0; i < 512; i++) packet[i] = 0;
-    
+
     // Ethernet header
     mem_copy(packet, broadcast_mac, 6);
     mem_copy(packet + 6, mac_address, 6);
     packet[12] = 0x08; packet[13] = 0x00;  // IPv4
-    
+
     // IP header
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     ip->version_ihl = 0x45;
@@ -1291,12 +1291,12 @@ static int dns_send_query(const char *domain) {
     ip->protocol = 17;  // UDP
     mem_copy(ip->src_ip, ip_address, 4);
     mem_copy(ip->dst_ip, dns_server, 4);
-    
+
     // UDP header
     struct udp_header *udp = (struct udp_header *)(packet + 34);
     udp->src_port = htons(12345);  // Random source port
     udp->dst_port = htons(DNS_PORT);
-    
+
     // DNS header
     struct dns_header *dns = (struct dns_header *)(packet + 42);
     dns->id = htons(dns_id++);
@@ -1305,29 +1305,29 @@ static int dns_send_query(const char *domain) {
     dns->ancount = 0;
     dns->nscount = 0;
     dns->arcount = 0;
-    
+
     // DNS question
     unsigned char *qname = packet + 42 + 12;  // After DNS header
     int name_len = dns_encode_name(domain, qname);
-    
+
     // QTYPE and QCLASS
     unsigned char *qtype = qname + name_len;
     qtype[0] = 0; qtype[1] = 1;   // Type A (IPv4 address)
     qtype[2] = 0; qtype[3] = 1;   // Class IN (Internet)
-    
+
     // Calculate lengths
     int dns_len = 12 + name_len + 4;  // Header + name + type/class
     int udp_len = 8 + dns_len;
     int ip_len = 20 + udp_len;
-    
+
     // Fill in lengths
     ip->total_len = htons(ip_len);
     ip->checksum = 0;
     ip->checksum = htons(checksum((unsigned char *)ip, 20));
-    
+
     udp->length = htons(udp_len);
     udp->checksum = 0;  // Optional for IPv4
-    
+
     // Send packet
     return net_send(broadcast_mac, ETH_TYPE_IP, packet + 14, ip_len);
 }
@@ -1338,20 +1338,20 @@ static int dns_parse_response(unsigned char *packet, int len, unsigned char *res
     struct ip_header *ip = (struct ip_header *)(packet + 14);
     int ip_hdr_len = (ip->version_ihl & 0x0F) * 4;
     struct udp_header *udp = (struct udp_header *)(packet + 14 + ip_hdr_len);
-    
+
     // Check if it's a DNS response
     if (htons(udp->src_port) != DNS_PORT) return 0;
-    
+
     struct dns_header *dns = (struct dns_header *)(packet + 14 + ip_hdr_len + 8);
-    
+
     // Check if it's a response (QR bit set) and no error
     unsigned short flags = htons(dns->flags);
     if (!(flags & 0x8000)) return 0;  // Not a response
     if (flags & 0x000F) return 0;     // Error code present
-    
+
     int ancount = htons(dns->ancount);
     if (ancount == 0) return 0;  // No answers
-    
+
     // Skip question section
     unsigned char *ptr = (unsigned char *)dns + 12;
     while (*ptr != 0) {
@@ -1363,7 +1363,7 @@ static int dns_parse_response(unsigned char *packet, int len, unsigned char *res
     }
     if (*ptr == 0) ptr++;  // Skip null terminator
     ptr += 4;  // Skip QTYPE and QCLASS
-    
+
     // Parse answer section
     for (int i = 0; i < ancount; i++) {
         // Skip name (handle compression)
@@ -1373,14 +1373,14 @@ static int dns_parse_response(unsigned char *packet, int len, unsigned char *res
             while (*ptr != 0) ptr += *ptr + 1;
             ptr++;  // Skip null
         }
-        
+
         unsigned short type = (ptr[0] << 8) | ptr[1];
         ptr += 2;
         ptr += 2;  // Class
         ptr += 4;  // TTL
         unsigned short rdlen = (ptr[0] << 8) | ptr[1];
         ptr += 2;
-        
+
         if (type == 1 && rdlen == 4) {  // Type A, 4 bytes
             result_ip[0] = ptr[0];
             result_ip[1] = ptr[1];
@@ -1388,10 +1388,10 @@ static int dns_parse_response(unsigned char *packet, int len, unsigned char *res
             result_ip[3] = ptr[3];
             return 1;  // Success!
         }
-        
+
         ptr += rdlen;  // Skip to next record
     }
-    
+
     return 0;
 }
 
@@ -1401,21 +1401,21 @@ static int dns_resolve(const char *domain, unsigned char *result_ip) {
     writeOut("Resolving ");
     writeOut(domain);
     writeOut("...\n");
-    
+
     // Send DNS query
     if (dns_send_query(domain) < 0) {
         writeOut("Failed to send DNS query\n");
         return 0;
     }
-    
+
     // Wait for response
     for (int timeout = 0; timeout < 500000; timeout++) {
         unsigned char packet[1500];
         int len = net_receive(packet, sizeof(packet));
-        
+
         if (len > 0) {
             unsigned short ethertype = (packet[12] << 8) | packet[13];
-            
+
             if (ethertype == ETH_TYPE_ARP) {
                 handle_arp(packet, len);
             }
@@ -1434,7 +1434,7 @@ static int dns_resolve(const char *domain, unsigned char *result_ip) {
             }
         }
     }
-    
+
     writeOut("DNS resolution timeout\n");
     return 0;
 }
