@@ -1,8 +1,8 @@
 # Spark
 
-Spark is a Open source Kernel thats designed for SBC`s (Single Board Computers) thats built on the ARM architecture
+Spark is an Open source Kernel thats designed for SBCs (Single Board Computers) thats built on the ARM architecture
 
-The goal is to make a lightweight server OS, where you can dedicate as much power towards the actual prosessing insead of OS background bloat.
+The goal is to make a lightweight server OS, where you can dedicate as much power towards the actual processing insead of OS background bloat.
 
 
 **Features**
