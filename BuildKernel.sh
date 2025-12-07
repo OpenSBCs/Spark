@@ -15,17 +15,21 @@ if [ ! -f "$DISK_IMG" ]; then
     qemu-img create -f raw "$DISK_IMG" 64M
 fi
 
+# Use pflash mapping when a disk image exists so it is memory-mapped
+# (this helps the current FAT driver which expects the image in guest RAM)
+DRIVE_IF="pflash"
+
 if [ "$MODE" == "gui" ]; then
     echo "Starting Spark Kernel (GUI mode)..."
     echo "==================================="
     # GUI mode with graphics
-    qemu-system-arm \
+        qemu-system-arm \
         -M versatilepb \
         -m 128M \
         -semihosting \
         -net nic,model=smc91c111 \
         -net user \
-        -drive file=$DISK_IMG,format=raw,if=sd \
+            -drive file=$DISK_IMG,format=raw,if=${DRIVE_IF} \
         -serial stdio \
         -kernel build/kernel.bin
 else
@@ -39,6 +43,6 @@ else
         -semihosting \
         -net nic,model=smc91c111 \
         -net user \
-        -drive file=$DISK_IMG,format=raw,if=sd \
+        -drive file=$DISK_IMG,format=raw,if=${DRIVE_IF} \
         -kernel build/kernel.bin
 fi
