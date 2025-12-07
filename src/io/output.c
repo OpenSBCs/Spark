@@ -1,5 +1,5 @@
 #include "uart.h"
-#include "drivers/graphicsDriver.h"
+#include "../drivers/graphicsDriver.h"
 #include "../package.h"
 
 // Graphics mode flag (0 = UART only, 1 = Graphics + UART)

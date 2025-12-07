@@ -1,4 +1,4 @@
-#include "../package.h"
+#include "package.h"
 
 void exit(void) {
     // Use ARM semihosting to exit QEMU

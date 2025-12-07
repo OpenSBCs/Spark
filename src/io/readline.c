@@ -1,6 +1,6 @@
 #include "../package.h"
 #include "uart.h"
-#include "drivers/ps2Keyboard.h"
+#include "../drivers/ps2Keyboard.h"
 
 // Check if UART has data
 static int uart_has_data(void) {
@@ -50,7 +50,7 @@ static char getchar_any(void) {
     }
 }
 
-char *readLine(char *buf, size_t bufSize) {
+int readline(char *buf, size_t bufSize) {
     size_t len = 0;
     
     // Initialize PS/2 keyboard
@@ -67,7 +67,7 @@ char *readLine(char *buf, size_t bufSize) {
         if (c == '\n' || c == '\r') {
             writeOut("\n");
             buf[len] = '\0';   
-            return buf;
+            return len;
         }
     
         // BACKSPACE

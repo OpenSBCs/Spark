@@ -1,7 +1,7 @@
 #ifndef FAT32_DRIVER_H
 #define FAT32_DRIVER_H
 
-#include "../../package.h"
+#include "../package.h"
 
 /*
  * FAT32 File System Driver for Spark Kernel
