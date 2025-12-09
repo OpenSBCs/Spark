@@ -1,11 +1,15 @@
 #include "package.h"
 #include "shell.h"
+// Preload menu (defined in src/Prel.c)
+void SelectParition(void);
 
 void kernel_main(void) {
     char input_buf[128];
     int running = 1;
 
     initGraphics();
+    SelectParition();
+
     writeOut("Hello from spark!\n\n");
 
     while (running) {

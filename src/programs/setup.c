@@ -3,6 +3,9 @@
 #include "../print.h"
 #include "../functions/drivers/fat32Driver.h"
 
+// Preload menu selector
+void SelectParition(void);
+
 void setup_process(void) {
     char buffer[100]; // predefine input data on RAM
     char prompt[] = "(SSW) > ";
@@ -18,19 +21,8 @@ void setup_process(void) {
             running--;
         }
         else if (strcmp(buffer, "part") == 0) {
-            print("Mounting FAT32 filesystem...\n");
-            int result = fat32_init(0);  // Partition at LBA 0
-            if (result == 0) {
-                print("FAT32 filesystem mounted successfully!\n");
-            } else if (result == -1) {
-                print("Error: Disk read failed\n");
-            } else if (result == -2) {
-                print("Error: Invalid boot signature\n");
-            } else if (result == -3) {
-                print("Error: Not a FAT32 filesystem\n");
-            } else {
-                print("Error: Mount failed\n");
-            }
+            // Show the interactive partition selection menu
+            SelectParition();
         }
         else if (strcmp(buffer, "help") == 0 || strcmp(buffer, "") == 0) {
             print(setup_help, "\n");

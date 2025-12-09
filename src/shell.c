@@ -4,6 +4,16 @@
 
 void setup_process(void);  // Forward declaration
 
+// External program declarations
+extern int prog_rm(const char *path);
+extern int prog_cat(const char *path);
+extern int prog_cp(const char *src, const char *dst);
+extern int prog_mv(const char *src, const char *dst);
+extern int prog_touch(const char *path);
+
+// Current working directory (simple implementation)
+static char current_dir[256] = "/";
+
 // Helper to extract argument from command
 static const char* get_arg(const char *cmd, const char *prefix) {
     int prefix_len = 0;
@@ -28,8 +38,21 @@ int sh_exec(const char *cmd) {
             "\n"
             "  FILES\n"
             "    ls [path]     List directory contents\n"
-            "    cat <file>    Display file contents\n"
+            "    cat <file>    Display file contents (external)\n"
+            "    rm <file>     Remove file (external)\n"
+            "    cp <s> <d>    Copy file (external)\n"
+            "    mv <s> <d>    Move/rename file (external)\n"
+            "    touch <file>  Create empty file (external)\n"
             "    exists <path> Check if file/dir exists\n"
+            "\n"
+            "  DIRECTORY\n"
+            "    cd [path]     Change directory\n"
+            "    pwd           Print working directory\n"
+            "    mkdir <dir>   Create directory\n"
+            "\n"
+            "  UTILITIES\n"
+            "    echo [text]   Print text to screen\n"
+            "    clear         Clear screen\n"
             "\n"
         );
     }
@@ -64,26 +87,6 @@ int sh_exec(const char *cmd) {
             }
         }
     }
-    else if (startsWith(cmd, "cat ")) {
-        if (!fat32_is_initialized()) {
-            writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
-        } else {
-            const char *path = get_arg(cmd, "cat");
-            if (path) {
-                static char file_buffer[4096];
-                int bytes = fat32_read_file(path, file_buffer, sizeof(file_buffer) - 1);
-                if (bytes >= 0) {
-                    file_buffer[bytes] = '\0';
-                    writeOut(file_buffer);
-                    writeOut("\n");
-                } else {
-                    writeOut("Error: Could not read file\n");
-                }
-            } else {
-                writeOut("Usage: cat <filename>\n");
-            }
-        }
-    }
     else if (startsWith(cmd, "exists ")) {
         if (!fat32_is_initialized()) {
             writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
@@ -104,6 +107,155 @@ int sh_exec(const char *cmd) {
             } else {
                 writeOut("Usage: exists <path>\n");
             }
+        }
+    }
+    // Builtin: pwd
+    else if (strcmp(cmd, "pwd") == 0) {
+        print(current_dir, "\n");
+    }
+    // Builtin: cd
+    else if (strcmp(cmd, "cd") == 0) {
+        // cd with no args goes to root
+        strcpy(current_dir, "/");
+    }
+    else if (startsWith(cmd, "cd ")) {
+        const char *path = get_arg(cmd, "cd");
+        if (path) {
+            if (!fat32_is_initialized()) {
+                writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
+            } else {
+                if (fat32_exists(path)) {
+                    if (fat32_is_directory(path)) {
+                        int i = 0;
+                        while (path[i] && i < 255) {
+                            current_dir[i] = path[i];
+                            i++;
+                        }
+                        current_dir[i] = '\0';
+                    } else {
+                        writeOut("Error: Not a directory\n");
+                    }
+                } else {
+                    writeOut("Error: Directory does not exist\n");
+                }
+            }
+        }
+    }
+    // Builtin: clear
+    else if (strcmp(cmd, "clear") == 0) {
+        writeOut("\033[2J\033[H");  // ANSI escape codes: clear screen and move cursor to home
+    }
+    // Builtin: mkdir
+    else if (startsWith(cmd, "mkdir ")) {
+        writeOut("Error: mkdir not implemented (filesystem write support needed)\n");
+    }   
+    // External program: cat
+    else if (startsWith(cmd, "cat ")) {
+        const char *path = get_arg(cmd, "cat");
+        if (path) {
+            if (!fat32_is_initialized()) {
+                writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
+            } else {
+                return prog_cat(path);
+            }
+        } else {
+            writeOut("Usage: cat <filename>\n");
+        }
+    }
+    // External program: rm
+    else if (startsWith(cmd, "rm ")) {
+        const char *path = get_arg(cmd, "rm");
+        if (path) {
+            if (!fat32_is_initialized()) {
+                writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
+            } else {
+                return prog_rm(path);
+            }
+        } else {
+            writeOut("Usage: rm <filename>\n");
+        }
+    }
+    // External program: touch
+    else if (startsWith(cmd, "touch ")) {
+        const char *path = get_arg(cmd, "touch");
+        if (path) {
+            if (!fat32_is_initialized()) {
+                writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
+            } else {
+                return prog_touch(path);
+            }
+        } else {
+            writeOut("Usage: touch <filename>\n");
+        }
+    }
+    // External program: cp
+    else if (startsWith(cmd, "cp ")) {
+        // Parse two arguments
+        const char *args = get_arg(cmd, "cp");
+        if (args) {
+            // Find first space to split arguments
+            const char *space = args;
+            while (*space && *space != ' ') space++;
+            
+            if (*space) {
+                // Create src string
+                static char src[256];
+                int i = 0;
+                while (args < space && i < 255) {
+                    src[i++] = *args++;
+                }
+                src[i] = '\0';
+                
+                // Skip spaces
+                while (*space == ' ') space++;
+                
+                if (*space && !fat32_is_initialized()) {
+                    writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
+                } else if (*space) {
+                    return prog_cp(src, space);
+                } else {
+                    writeOut("Usage: cp <source> <destination>\n");
+                }
+            } else {
+                writeOut("Usage: cp <source> <destination>\n");
+            }
+        } else {
+            writeOut("Usage: cp <source> <destination>\n");
+        }
+    }
+    // External program: mv
+    else if (startsWith(cmd, "mv ")) {
+        // Parse two arguments
+        const char *args = get_arg(cmd, "mv");
+        if (args) {
+            // Find first space to split arguments
+            const char *space = args;
+            while (*space && *space != ' ') space++;
+            
+            if (*space) {
+                // Create src string
+                static char src[256];
+                int i = 0;
+                while (args < space && i < 255) {
+                    src[i++] = *args++;
+                }
+                src[i] = '\0';
+                
+                // Skip spaces
+                while (*space == ' ') space++;
+                
+                if (*space && !fat32_is_initialized()) {
+                    writeOut("Error: Filesystem not mounted. Run 'setup' then 'part'.\n");
+                } else if (*space) {
+                    return prog_mv(src, space);
+                } else {
+                    writeOut("Usage: mv <source> <destination>\n");
+                }
+            } else {
+                writeOut("Usage: mv <source> <destination>\n");
+            }
+        } else {
+            writeOut("Usage: mv <source> <destination>\n");
         }
     }
     else if (cmd[0] != '\0') {

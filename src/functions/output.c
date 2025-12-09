@@ -117,3 +117,11 @@ int startsWith(const char *str, const char *prefix) {
     }
     return 1;
 }
+
+// strcpy - copy string from src to dest
+
+char *strcpy(char *dest, const char *src) {
+    char *original = dest;
+    while ((*dest++ = *src++));
+    return original;
+}

@@ -2,6 +2,7 @@
 #define FAT32_DRIVER_H
 
 #include "../../package.h"
+#include "pl181_sd.h"
 
 /*
  * FAT32 File System Driver for Spark Kernel
@@ -152,11 +153,11 @@ typedef struct {
 } fat32_dir_iter_t;
 
 // ============================================================================
-// Global FAT32 State
+// Global FAT32 State (defined in fat32_state.c)
 // ============================================================================
 
-static fat32_fs_t g_fat32_fs;
-static u8 g_sector_buffer[FAT32_SECTOR_SIZE];
+extern fat32_fs_t g_fat32_fs;
+extern u8 g_sector_buffer[FAT32_SECTOR_SIZE];
 
 // ============================================================================
 // Software Division (ARM has no hardware divider)
@@ -209,31 +210,14 @@ static inline u32 fat32_mod(u32 n, u32 d) {
 static volatile u8 *fat32_mem_base = (volatile u8 *)DISK_BASE_ADDR;
 
 static int fat32_disk_read_sectors(u32 lba, u32 count, void *buffer) {
-    volatile u8 *disk = fat32_mem_base;
-    u8 *buf = (u8 *)buffer;
-    u32 offset = fat32_div(lba, 1) * FAT32_SECTOR_SIZE; /* lba * 512 */
-    /* offset = lba * FAT32_SECTOR_SIZE; but keep arithmetic explicit */
-    offset = lba * FAT32_SECTOR_SIZE;
-    u32 size = count * FAT32_SECTOR_SIZE;
-    
-    for (u32 i = 0; i < size; i++) {
-        buf[i] = disk[offset + i];
-    }
-    
-    return 0;
+    // Use PL181 SD controller for block reads
+    return sd_read_sectors(lba, count, buffer);
 }
 
 static int fat32_disk_write_sectors(u32 lba, u32 count, const void *buffer) {
-    volatile u8 *disk = fat32_mem_base;
-    const u8 *buf = (const u8 *)buffer;
-    u32 offset = lba * FAT32_SECTOR_SIZE;
-    u32 size = count * FAT32_SECTOR_SIZE;
-    
-    for (u32 i = 0; i < size; i++) {
-        disk[offset + i] = buf[i];
-    }
-    
-    return 0;
+    // SD write not implemented yet
+    (void)lba; (void)count; (void)buffer;
+    return -1;
 }
 
 // Probe a memory address to see if it contains a valid FAT32 boot sector.
@@ -252,6 +236,85 @@ static int fat32_probe_memory_base(u32 addr) {
         }
     }
     return 0;
+}
+
+// Probe and set fat32_mem_base using the same candidate addresses used in fat32_init
+static void fat32_probe_and_set_base(void) {
+    u32 probe_addrs[] = {
+        0x10000000u,
+        0x0A000000u,
+        0x00A00000u,
+        0x00100000u,
+        0x00000000u,
+        0x20000000u,
+        0x40000000u,
+        0x08000000u,
+        (u32)DISK_BASE_ADDR
+    };
+    for (u32 i = 0; i < sizeof(probe_addrs)/sizeof(probe_addrs[0]); i++) {
+        u32 a = probe_addrs[i];
+        if (fat32_probe_memory_base(a)) {
+            fat32_mem_base = (volatile u8 *)a;
+            return;
+        }
+    }
+    // leave default if none found
+    fat32_mem_base = (volatile u8 *)DISK_BASE_ADDR;
+}
+
+// Read and parse MBR partition table (up to max_entries). Returns number of entries parsed (0-4),
+// or -1 on disk read failure. If no MBR found but valid FAT32 boot sector at LBA 0 (superfloppy),
+// returns 1 with start=0.
+static int fat32_read_partitions(u8 *types, u32 *starts, u32 *sizes, int max_entries) {
+    if (max_entries <= 0) return 0;
+
+    // Initialize SD card
+    if (sd_init() != 0) {
+        return -1;
+    }
+
+    if (sd_read_sectors(0, 1, g_sector_buffer) != 0) {
+        return -1;
+    }
+
+    // Check for valid boot signature
+    if (g_sector_buffer[510] != 0x55 || g_sector_buffer[511] != 0xAA) {
+        return -1;
+    }
+
+    int found = 0;
+    // Partition table starts at offset 446, 4 entries x 16 bytes
+    for (int i = 0; i < 4 && found < max_entries; i++) {
+        int off = 446 + i * 16;
+        u8 boot_flag = g_sector_buffer[off + 0];
+        u8 part_type = g_sector_buffer[off + 4];
+        u32 start_lba = *(u32 *)&g_sector_buffer[off + 8];
+        u32 part_size = *(u32 *)&g_sector_buffer[off + 12];
+
+        // Only include non-empty partition entries (type != 0)
+        if (part_type != 0) {
+            types[found] = part_type;
+            starts[found] = start_lba;
+            sizes[found] = part_size;
+            found++;
+        }
+    }
+
+    // If no MBR partitions found, check if this is a superfloppy (FAT32 at LBA 0)
+    if (found == 0) {
+        fat32_bpb_t *bpb = (fat32_bpb_t *)g_sector_buffer;
+        // Check if it looks like a FAT32 boot sector
+        if (bpb->fat_size_16 == 0 && bpb->fat_size_32 != 0 && 
+            (bpb->bytes_per_sector == 512 || bpb->bytes_per_sector == FAT32_SECTOR_SIZE)) {
+            // Superfloppy - FAT32 starts at LBA 0
+            types[0] = 0x0C;  // FAT32 LBA type
+            starts[0] = 0;
+            sizes[0] = bpb->total_sectors_32;
+            found = 1;
+        }
+    }
+
+    return found;
 }
 
 // ============================================================================
@@ -433,41 +496,20 @@ static void fat32_83_to_name(const u8 *name83, char *name) {
 static int fat32_init(u32 partition_start_lba) {
     fat32_bpb_t *bpb = (fat32_bpb_t *)g_sector_buffer;
     
-    // Try to locate the disk image in guest memory by probing likely addresses.
-    u32 probe_addrs[] = {
-        0x10000000u,
-        0x0A000000u,
-        0x00A00000u,
-        0x00100000u,
-        0x00000000u,
-        0x20000000u,
-        0x40000000u,
-        0x08000000u,
-        (u32)DISK_BASE_ADDR
-    };
-    int found = 0;
-    for (u32 i = 0; i < sizeof(probe_addrs)/sizeof(probe_addrs[0]); i++) {
-        u32 a = probe_addrs[i];
-        if (fat32_probe_memory_base(a)) {
-            fat32_mem_base = (volatile u8 *)a;
-            writeOut("[FAT32] found image at base address: "); writeOutNum(a); writeOut("\n");
-            found = 1;
-            break;
-        }
+    // Initialize SD card first
+    if (sd_init() != 0) {
+        writeOut("[FAT32] SD card init failed\n");
+        return -1;
     }
+    writeOut("[FAT32] SD card initialized\n");
 
-    // If probe didn't find the image, fall back to default base and read
-    if (!found) {
-        fat32_mem_base = (volatile u8 *)DISK_BASE_ADDR;
-        writeOut("[FAT32] probe failed — using default base\n");
-    }
-
-    // Read boot sector from the chosen memory base
+    // Read boot sector using SD driver
     if (fat32_disk_read_sectors(partition_start_lba, 1, g_sector_buffer) != 0) {
+        writeOut("[FAT32] Failed to read boot sector\n");
         return -1;  // Disk read error
     }
     
-    // Debug: dump first bytes and boot signature to help diagnose mapping
+    // Debug: dump first bytes and boot signature to help diagnose
     writeOut("[FAT32] boot sector first bytes: ");
     for (int _i = 0; _i < 8; _i++) {
         writeOutNum((long)g_sector_buffer[_i]); writeOut(" ");

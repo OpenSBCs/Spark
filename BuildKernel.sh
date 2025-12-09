@@ -15,9 +15,8 @@ if [ ! -f "$DISK_IMG" ]; then
     qemu-img create -f raw "$DISK_IMG" 64M
 fi
 
-# Use pflash mapping when a disk image exists so it is memory-mapped
-# (this helps the current FAT driver which expects the image in guest RAM)
-DRIVE_IF="pflash"
+# Use SD controller so the PL181 driver can access the disk
+DRIVE_IF="sd"
 
 if [ "$MODE" == "gui" ]; then
     echo "Starting Spark Kernel (GUI mode)..."
@@ -33,8 +32,6 @@ if [ "$MODE" == "gui" ]; then
         -serial stdio \
         -kernel build/kernel.bin
 else
-    echo "Starting Spark Kernel (Console mode)..."
-    echo "========================================"
     # Console mode (no graphics)
     qemu-system-arm \
         -M versatilepb \
