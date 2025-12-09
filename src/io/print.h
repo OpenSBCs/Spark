@@ -10,7 +10,7 @@
     unsigned short: writeOutNum, \
     unsigned int: writeOutNum, \
     unsigned long: writeOutNum, \
-    default: writeOut \
+    default: writeOutNum \
 )(x)
 
 #define EXPAND(x) x

@@ -42,5 +42,16 @@ $(BUILD)/boot.o: $(BOOT) | $(BUILD)
 %.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
 
+r: all
+	qemu-system-arm \
+        -M versatilepb \
+        -m 128M \
+        -semihosting \
+        -net nic,model=smc91c111 \
+        -net user \
+        -drive file=disk.img,format=raw,if=sd \
+        -serial stdio \
+        -kernel build/spark.bin
+
 clean:
 	rm -rf $(BUILD)

@@ -6,8 +6,8 @@
 // Preload menu selector
 void SelectParition(void);
 
-void setup_process(void) {
-    char buffer[100]; // predefine input data on RAM
+void prog_setup(void) {
+    char buffer[64]; // predefine input data on RAM
     char prompt[] = "(SSW) > ";
 
     int running = 1;

@@ -1,16 +1,17 @@
 #include <package.h>
-#include "print.h"
 #include <drivers/fat32Driver.h>
+#include "print.h"
 #include "shell.h"
 
-void setup_process(void);  // Forward declaration
+  // Forward declaration
 
 // External program declarations
-extern int prog_rm(const char *path);
-extern int prog_cat(const char *path);
-extern int prog_cp(const char *src, const char *dst);
-extern int prog_mv(const char *src, const char *dst);
-extern int prog_touch(const char *path);
+int prog_rm(const char *path);
+int prog_cat(const char *path);
+int prog_cp(const char *src, const char *dst);
+int prog_mv(const char *src, const char *dst);
+int prog_touch(const char *path);
+void prog_setup(void);
 
 // Current working directory (simple implementation)
 static char current_dir[256] = "/";
@@ -67,7 +68,7 @@ int sh_exec(const char *cmd) {
         return 66;
     }
     else if (strcmp(cmd, "setup") == 0 || strcmp(cmd, "ssw") == 0) {
-        setup_process();
+        prog_setup();
     }
     else if (strcmp(cmd, "ls") == 0) {
         if (!fat32_is_initialized()) {
@@ -93,6 +94,7 @@ int sh_exec(const char *cmd) {
         writeOut("\033[2J\033[H");  // ANSI escape codes: clear screen and move cursor to home
     }
     // External program: cat
+
     else if (startsWith(cmd, "cat ")) {
         const char *path = get_arg(cmd, "cat");
         if (path) {
