@@ -8,7 +8,7 @@
  * attached via QEMU's -drive file=disk.img,if=sd option.
  */
 
-#include "../../package.h"
+#include "../package.h"
 
 // PL181 MMCI base address on VersatilePB
 #define MMCI_BASE           0x10005000

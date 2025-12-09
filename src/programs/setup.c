@@ -1,7 +1,7 @@
 #include "../package.h"
 #include "strings.h"
-#include "../print.h"
-#include "../functions/drivers/fat32Driver.h"
+#include "../io/print.h"
+#include "../drivers/fat32Driver.h"
 
 // Preload menu selector
 void SelectParition(void);
@@ -16,7 +16,7 @@ void setup_process(void) {
 
     while (running == 1) {
         print(prompt);
-        readLine(buffer, sizeof(buffer));
+        readline(buffer, sizeof(buffer));
         if (strcmp(buffer, "exit") == 0) {
             running--;
         }

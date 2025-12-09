@@ -1,7 +1,7 @@
 #ifndef GRAPHICS_DRIVER_H
 #define GRAPHICS_DRIVER_H
 
-#include "../../package.h"
+#include "../package.h"
 
 // PL110 LCD Controller for VersatilePB
 #define LCD_BASE        0x10120000

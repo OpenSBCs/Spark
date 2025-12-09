@@ -1,7 +1,7 @@
 #ifndef FAT32_DRIVER_H
 #define FAT32_DRIVER_H
 
-#include "../../package.h"
+#include "../package.h"
 #include "pl181_sd.h"
 
 /*

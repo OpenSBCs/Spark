@@ -1,6 +1,7 @@
-#include "package.h"
+#include "../package.h"
 #include "print.h"
-#include "functions/drivers/fat32Driver.h"
+#include "../drivers/fat32Driver.h"
+#include "shell.h"
 
 void setup_process(void);  // Forward declaration
 
@@ -24,6 +25,19 @@ static const char* get_arg(const char *cmd, const char *prefix) {
     while (*arg == ' ') arg++;
     
     return (*arg) ? arg : (void*)0;
+}
+
+void sh_start(void) {
+    char input_buf[128];
+    while (1) {
+        writeOut("> ");
+        readline(input_buf, sizeof(input_buf));
+
+        int ret = sh_exec(input_buf);
+        if (ret == 66) {
+            break;
+        }
+    }
 }
 
 int sh_exec(const char *cmd) {
