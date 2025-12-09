@@ -53,6 +53,7 @@ int sh_exec(const char *cmd) {
             "  FILES\n"
             "    ls [path]     List directory contents\n"
             "    cat <file>    Display file contents (external)\n"
+            "    mkf <file>    Create empty file\n"
             "\n"
         );
     }
@@ -103,7 +104,19 @@ int sh_exec(const char *cmd) {
         } else {
             writeOut("Usage: cat <filename>\n");
         }
-    }    
+    }
+    else if (startsWith(cmd, "mkf ")) {
+        const char *path = get_arg(cmd, "touch");
+        if (path) {
+            if (!fat32_is_initialized()) {
+                writeOut("Error: Filesystem not mounted. Run 'setup' first.\n");
+            } else {
+                return prog_touch(path);
+            }
+        } else {
+            writeOut("Usage: touch <filename>\n");
+        }
+    }
     else if (cmd[0] != '\0') {
         print("Invalid command: ", cmd, "\n");
     }

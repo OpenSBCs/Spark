@@ -2,13 +2,11 @@
  * touch - Create empty file or update timestamp
  * 
  * Usage: touch <filename>
- * 
- * Note: Currently not fully implemented - requires filesystem write support
  */
 
 #include "../package.h"
 #include "../print.h"
-#include "../functions/drivers/fat32Driver.h"
+#include "../drivers/writeDriver.h"
 
 int prog_touch(const char *path) {
     if (!path || path[0] == '\0') {
@@ -18,25 +16,36 @@ int prog_touch(const char *path) {
 
     // Check if file already exists
     if (fat32_exists(path)) {
-        // File exists - would normally update timestamp
-        writeOut("Error: touch on existing files not yet implemented\n");
-        return 1;
+        writeOut("File already exists: ");
+        writeOut(path);
+        writeOut("\n");
+        return 0;  // Success - file exists
     }
 
-    // TODO: Implement file creation
-    // This requires:
-    // 1. Finding the parent directory
-    // 2. Allocating at least one cluster for the file
-    // 3. Creating directory entry with:
-    //    - File name in 8.3 format
-    //    - Attributes (archive bit set)
-    //    - Creation/modification timestamps
-    //    - First cluster number
-    //    - File size (0 for empty file)
-    // 4. Writing the directory entry
-    // 5. Updating FAT to mark cluster as end-of-chain
-    // 6. Writing changes back to disk
+    // Create the file
+    int result = fat32_create_file(path);
     
-    writeOut("Error: touch not yet implemented (filesystem write support needed)\n");
-    return 1;
+    if (result == 0) {
+        writeOut("Created: ");
+        writeOut(path);
+        writeOut("\n");
+        return 0;
+    } else if (result == -2) {
+        writeOut("Error: File already exists\n");
+        return 1;
+    } else if (result == -3) {
+        writeOut("Error: Parent directory not found\n");
+        return 1;
+    } else if (result == -4) {
+        writeOut("Error: Invalid filename (use 8.3 format)\n");
+        return 1;
+    } else if (result == -5) {
+        writeOut("Error: No free directory entries\n");
+        return 1;
+    } else {
+        writeOut("Error: Could not create file (code ");
+        writeOutNum(result);
+        writeOut(")\n");
+        return 1;
+    }
 }
