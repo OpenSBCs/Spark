@@ -7,40 +7,40 @@ LD = arm-none-eabi-ld
 OBJCOPY = arm-none-eabi-objcopy
 
 # Directories
-BUILD_DIR ?= build
+BUILD ?= build
 
 # Files - automatically find all .c files in src/ and subdirectories
 BOOT = src/boot.s
 SRC = $(shell find src -name '*.c')
 LINKER = src/linker.ld
-OUTPUT = kernel
+OUTPUT = spark
 
 # Generate object file names from source files
-OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SRC))
+OBJS = $(patsubst src/%.c,$(BUILD)/%.o,$(SRC))
 
 # Flags
-CFLAGS = -mcpu=arm926ej-s -marm -O2 -nostdlib -ffreestanding
+CFLAGS = -mcpu=arm926ej-s -marm -O2 -nostdlib -ffreestanding -Isrc
 LDFLAGS = -T $(LINKER)
 
 # Targets
-all: $(OUTPUT).bin
+all: $(BUILD)/$(OUTPUT).bin
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+$(BUILD):
+	mkdir -p $(BUILD)
 
 # Pattern rule to compile .c files to .o files
-$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
+$(BUILD)/%.o: src/%.c | $(BUILD)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/boot.o: $(BOOT) | $(BUILD_DIR)
+$(BUILD)/boot.o: $(BOOT) | $(BUILD)
 	$(AS) -o $@ $<
 
-$(OUTPUT).elf: $(BUILD_DIR)/boot.o $(OBJS) $(LINKER)
-	$(LD) $(LDFLAGS) -o $(BUILD_DIR)/$(OUTPUT).elf $(BUILD_DIR)/boot.o $(OBJS)
+%.elf: $(BUILD)/boot.o $(OBJS) $(LINKER)
+	$(LD) $(LDFLAGS) -o $@ $(BUILD)/boot.o $(OBJS)
 
-$(OUTPUT).bin: $(OUTPUT).elf
-	$(OBJCOPY) -O binary $(BUILD_DIR)/$(OUTPUT).elf $(BUILD_DIR)/$(OUTPUT).bin
+%.bin: %.elf
+	$(OBJCOPY) -O binary $< $@
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD)

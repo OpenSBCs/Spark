@@ -1,14 +1,13 @@
 /*
  * rm - Remove file
- * 
+ *
  * Usage: rm <filename>
- * 
+ *
  * Note: Currently not fully implemented - requires filesystem write support
  */
 
-#include "../package.h"
-#include "../print.h"
-#include "../functions/drivers/fat32Driver.h"
+#include <package.h>
+#include <drivers/fat32Driver.h>
 
 int prog_rm(const char *path) {
     if (!path || path[0] == '\0') {
@@ -38,7 +37,7 @@ int prog_rm(const char *path) {
     // 2. Marking it as deleted (0xE5)
     // 3. Freeing FAT chain clusters
     // 4. Writing changes back to disk
-    
+
     writeOut("Error: rm not yet implemented (filesystem write support needed)\n");
     return 1;
 }

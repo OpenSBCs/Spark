@@ -1,14 +1,13 @@
 /*
  * cp - Copy file
- * 
+ *
  * Usage: cp <source> <destination>
- * 
+ *
  * Note: Currently not fully implemented - requires filesystem write support
  */
 
-#include "../package.h"
-#include "../print.h"
-#include "../functions/drivers/fat32Driver.h"
+#include <package.h>
+#include <drivers/fat32Driver.h>
 
 int prog_cp(const char *src, const char *dst) {
     if (!src || src[0] == '\0') {
@@ -52,7 +51,7 @@ int prog_cp(const char *src, const char *dst) {
     // 4. Writing data to clusters
     // 5. Creating directory entry for destination
     // 6. Writing changes back to disk
-    
+
     writeOut("Error: cp not yet implemented (filesystem write support needed)\n");
     return 1;
 }

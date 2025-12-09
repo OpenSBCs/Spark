@@ -19,15 +19,15 @@ fi
 DRIVE_IF="sd"
 
 if [ "$MODE" == "gui" ]; then
-        qemu-system-arm \
+    qemu-system-arm \
         -M versatilepb \
         -m 128M \
         -semihosting \
         -net nic,model=smc91c111 \
         -net user \
-            -drive file=$DISK_IMG,format=raw,if=${DRIVE_IF} \
+        -drive file=$DISK_IMG,format=raw,if=${DRIVE_IF} \
         -serial stdio \
-        -kernel build/kernel.bin
+        -kernel build/spark.bin
 else
     # Console mode (no graphics)
     qemu-system-arm \
@@ -38,5 +38,5 @@ else
         -net nic,model=smc91c111 \
         -net user \
         -drive file=$DISK_IMG,format=raw,if=${DRIVE_IF} \
-        -kernel build/kernel.bin
+        -kernel build/spark.bin
 fi

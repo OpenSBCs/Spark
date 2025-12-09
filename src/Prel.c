@@ -1,11 +1,10 @@
 // preload script
 #include "package.h"
-#include "io/shell.h"
-#include "functions/uart.h"
-#include "functions/drivers/ps2Keyboard.h"
-#include "functions/drivers/graphicsDriver.h"
+#include <io/uart.h>
+#include "drivers/ps2Keyboard.h"
+#include "drivers/graphicsDriver.h"
 // FAT32 driver — used to enumerate partitions
-#include "functions/drivers/fat32Driver.h"
+#include "drivers/fat32Driver.h"
 
 // Simple menu helper: display a list of items and let the user pick one
 static int parse_uint(const char *s) {

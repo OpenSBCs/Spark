@@ -1,6 +1,6 @@
-#include "../package.h"
+#include <package.h>
 #include "print.h"
-#include "../drivers/fat32Driver.h"
+#include <drivers/fat32Driver.h>
 #include "shell.h"
 
 void setup_process(void);  // Forward declaration
@@ -19,11 +19,11 @@ static char current_dir[256] = "/";
 static const char* get_arg(const char *cmd, const char *prefix) {
     int prefix_len = 0;
     while (prefix[prefix_len]) prefix_len++;
-    
+
     // Skip prefix and space
     const char *arg = cmd + prefix_len;
     while (*arg == ' ') arg++;
-    
+
     return (*arg) ? arg : (void*)0;
 }
 
@@ -91,7 +91,7 @@ int sh_exec(const char *cmd) {
     // Builtin: clear
     else if (strcmp(cmd, "clear") == 0) {
         writeOut("\033[2J\033[H");  // ANSI escape codes: clear screen and move cursor to home
-    } 
+    }
     // External program: cat
     else if (startsWith(cmd, "cat ")) {
         const char *path = get_arg(cmd, "cat");

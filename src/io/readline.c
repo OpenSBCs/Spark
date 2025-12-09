@@ -1,6 +1,6 @@
-#include "../package.h"
+#include <package.h>
 #include "uart.h"
-#include "../drivers/ps2Keyboard.h"
+#include <drivers/ps2Keyboard.h>
 
 // Check if UART has data
 static int uart_has_data(void) {
@@ -17,13 +17,13 @@ static char getchar_any(void) {
         // Check PS/2 keyboard (Scancode Set 2)
         if (ps2_has_key()) {
             unsigned char scancode = ps2_get_scancode();
-            
+
             // 0xF0 = key release prefix in Set 2
             if (scancode == 0xF0) {
                 release_next = 1;
                 continue;
             }
-            
+
             // Handle key release
             if (release_next) {
                 release_next = 0;
@@ -33,18 +33,18 @@ static char getchar_any(void) {
                 }
                 continue;
             }
-            
+
             // Check for shift press (Left Shift = 0x12, Right Shift = 0x59)
             if (scancode == 0x12 || scancode == 0x59) {
                 shift_pressed = 1;
                 continue;
             }
-            
+
             // Convert to ASCII using Set 2 tables
-            char c = shift_pressed ? 
-                scancode_set2_shift[scancode] : 
+            char c = shift_pressed ?
+                scancode_set2_shift[scancode] :
                 scancode_set2[scancode];
-            
+
             if (c != 0) return c;
         }
     }
@@ -52,10 +52,10 @@ static char getchar_any(void) {
 
 int readline(char *buf, size_t bufSize) {
     size_t len = 0;
-    
+
     // Initialize PS/2 keyboard
     ps2_init();
-    
+
     while (1) {
         char c = getchar_any();
 
@@ -66,10 +66,10 @@ int readline(char *buf, size_t bufSize) {
 
         if (c == '\n' || c == '\r') {
             writeOut("\n");
-            buf[len] = '\0';   
+            buf[len] = '\0';
             return len;
         }
-    
+
         // BACKSPACE
         if (c == '\b' || c == 127) {
             if (len > 0) {
@@ -78,7 +78,7 @@ int readline(char *buf, size_t bufSize) {
             }
             continue;
         }
-    
+
         // normal characters
         if (len < bufSize - 1 && c >= 32 && c < 127) {
             buf[len++] = c;

@@ -1,12 +1,11 @@
 /*
  * touch - Create empty file or update timestamp
- * 
+ *
  * Usage: touch <filename>
  */
 
-#include "../package.h"
-#include "../print.h"
-#include "../drivers/writeDriver.h"
+#include <package.h>
+#include <drivers/writeDriver.h>
 
 int prog_touch(const char *path) {
     if (!path || path[0] == '\0') {
@@ -24,7 +23,7 @@ int prog_touch(const char *path) {
 
     // Create the file
     int result = fat32_create_file(path);
-    
+
     if (result == 0) {
         writeOut("Created: ");
         writeOut(path);

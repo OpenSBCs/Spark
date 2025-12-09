@@ -1,12 +1,11 @@
 /*
  * cat - Display file contents
- * 
+ *
  * Usage: cat <filename>
  */
 
-#include "../package.h"
-#include "../print.h"
-#include "../functions/drivers/fat32Driver.h"
+#include <package.h>
+#include <drivers/fat32Driver.h>
 
 int prog_cat(const char *path) {
     if (!path || path[0] == '\0') {
@@ -33,7 +32,7 @@ int prog_cat(const char *path) {
     // Read and display file contents
     static char file_buffer[4096];
     int bytes = fat32_read_file(path, file_buffer, sizeof(file_buffer) - 1);
-    
+
     if (bytes >= 0) {
         file_buffer[bytes] = '\0';
         writeOut(file_buffer);

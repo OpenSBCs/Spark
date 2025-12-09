@@ -1,7 +1,7 @@
 #ifndef GRAPHICS_DRIVER_H
 #define GRAPHICS_DRIVER_H
 
-#include "../package.h"
+#include <package.h>
 
 // PL110 LCD Controller for VersatilePB
 #define LCD_BASE        0x10120000
@@ -249,20 +249,20 @@ static const unsigned char font_8x16[95][16] = {
 static void gfx_init(void) {
     // Set framebuffer address
     *LCD_UPBASE = (unsigned int)FRAMEBUFFER;
-    
+
     // Configure timing for 640x480
     *LCD_TIMING0 = 0x3F1F3F9C;
     *LCD_TIMING1 = 0x090B61DF;
     *LCD_TIMING2 = 0x067F1800;
-    
+
     // Enable LCD: RGB565, TFT, enabled
     *LCD_CONTROL = 0x00000829;  // Power on, BGR, TFT, 16bpp, enable
-    
+
     // Clear screen
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
         FRAMEBUFFER[i] = bg_color;
     }
-    
+
     cursor_x = 0;
     cursor_y = 0;
 }
@@ -279,7 +279,7 @@ static void gfx_draw_char(int x, int y, unsigned char c) {
     if (c < 32 || c > 126) c = ' ';
 
     const unsigned char *glyph = font_8x16[c - 32];
-    
+
     for (int row = 0; row < CHAR_HEIGHT; row++) {
         unsigned char line = glyph[row];
         for (int col = 0; col < CHAR_WIDTH; col++) {
@@ -297,7 +297,7 @@ static void gfx_scroll(void) {
             FRAMEBUFFER[y * SCREEN_WIDTH + x] = FRAMEBUFFER[(y + CHAR_HEIGHT) * SCREEN_WIDTH + x];
         }
     }
-    
+
     // Clear the bottom line
     for (int y = SCREEN_HEIGHT - CHAR_HEIGHT; y < SCREEN_HEIGHT; y++) {
         for (int x = 0; x < SCREEN_WIDTH; x++) {
@@ -321,13 +321,13 @@ static void gfx_putchar(unsigned char c) {
     } else {
         gfx_draw_char(cursor_x * CHAR_WIDTH, cursor_y * CHAR_HEIGHT, c);
         cursor_x++;
-        
+
         if (cursor_x >= SCREEN_COLS) {
             cursor_x = 0;
             cursor_y++;
         }
     }
-    
+
     // Scroll if needed
     if (cursor_y >= SCREEN_ROWS) {
         gfx_scroll();

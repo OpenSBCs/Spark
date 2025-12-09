@@ -1,7 +1,7 @@
-#include "../package.h"
+#include <package.h>
 #include "strings.h"
-#include "../io/print.h"
-#include "../drivers/fat32Driver.h"
+#include <io/print.h>
+#include <drivers/fat32Driver.h>
 
 // Preload menu selector
 void SelectParition(void);
@@ -34,6 +34,6 @@ void setup_process(void) {
             print("unknown command: ", buffer, "\n");
         }
     }
-    
+
     return;
 };

@@ -1,14 +1,13 @@
 /*
  * mv - Move/rename file
- * 
+ *
  * Usage: mv <source> <destination>
- * 
+ *
  * Note: Currently not fully implemented - requires filesystem write support
  */
 
-#include "../package.h"
-#include "../print.h"
-#include "../functions/drivers/fat32Driver.h"
+#include <package.h>
+#include <drivers/fat32Driver.h>
 
 int prog_mv(const char *src, const char *dst) {
     if (!src || src[0] == '\0') {
@@ -45,7 +44,7 @@ int prog_mv(const char *src, const char *dst) {
     //    - Create new entry in destination directory
     //    - Remove entry from source directory
     // 4. Writing changes back to disk
-    
+
     writeOut("Error: mv not yet implemented (filesystem write support needed)\n");
     return 1;
 }
