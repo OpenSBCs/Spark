@@ -19,9 +19,6 @@ fi
 DRIVE_IF="sd"
 
 if [ "$MODE" == "gui" ]; then
-    echo "Starting Spark Kernel (GUI mode)..."
-    echo "==================================="
-    # GUI mode with graphics
         qemu-system-arm \
         -M versatilepb \
         -m 128M \

@@ -1,6 +1,6 @@
 // preload script
 #include "package.h"
-#include "shell.h"
+#include "io/shell.h"
 #include "functions/uart.h"
 #include "functions/drivers/ps2Keyboard.h"
 #include "functions/drivers/graphicsDriver.h"
@@ -233,7 +233,7 @@ void SelectParition(void) {
     // Simpler: prompt the user for a numeric selection now (blocking) to get the chosen index.
     char buf[32];
     writeOut("Enter partition number to mount (or -1 to cancel): ");
-    readLine(buf, sizeof(buf));
+    readline(buf, sizeof(buf));
     int choice = parse_uint(buf);
     if (choice < 0 || choice >= count) {
         writeOut("Mount cancelled\n");

@@ -42,11 +42,11 @@ void writeOut(const char *s) {
     while (*s) {
         // Always write to UART
         while (*UART0_FR & UART0_FR_TXFF);
-        *UART0_DR = *s;
+        *UART0_DR = (unsigned int)(unsigned char)(*s);
 
         // Also write to graphics if enabled
         if (graphics_enabled) {
-            gfx_putchar(*s);
+            gfx_putchar((unsigned char)*s);
         }
 
         s++;

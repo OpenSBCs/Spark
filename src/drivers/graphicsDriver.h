@@ -275,9 +275,9 @@ static void gfx_put_pixel(int x, int y, unsigned short color) {
 }
 
 // Draw a character at pixel position
-static void gfx_draw_char(int x, int y, char c) {
+static void gfx_draw_char(int x, int y, unsigned char c) {
     if (c < 32 || c > 126) c = ' ';
-    
+
     const unsigned char *glyph = font_8x16[c - 32];
     
     for (int row = 0; row < CHAR_HEIGHT; row++) {
@@ -307,7 +307,7 @@ static void gfx_scroll(void) {
 }
 
 // Print a character (handles cursor, newlines, scrolling)
-static void gfx_putchar(char c) {
+static void gfx_putchar(unsigned char c) {
     if (c == '\n') {
         cursor_x = 0;
         cursor_y++;
