@@ -10,5 +10,5 @@ halt:
 .section .bss
 .align 3
 stack:
-    .space 0x1000
+    .space 0x10000
 stack_top:

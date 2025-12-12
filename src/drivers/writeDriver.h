@@ -462,7 +462,7 @@ static int fat32_write_file(const char *path, const void *data, u32 size) {
 
     // Allocate clusters for new data
     u32 bytes_per_cluster = g_fat32_fs.bytes_per_cluster;
-    u32 clusters_needed = size > 0 ? ((size + bytes_per_cluster - 1) / bytes_per_cluster) : 0;
+    u32 clusters_needed = size > 0 ? fat32_div(size + bytes_per_cluster - 1, bytes_per_cluster) : 0;
 
     u32 first_cluster = 0;
     u32 prev_cluster = 0;

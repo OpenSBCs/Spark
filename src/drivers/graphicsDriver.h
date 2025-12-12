@@ -342,19 +342,54 @@ static void gfx_print(const char *s) {
     }
 }
 
-// Clear screen
+// Clear screen (always clears to black for consistency)
 static void gfx_clear(void) {
     for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
-        FRAMEBUFFER[i] = bg_color;
+        FRAMEBUFFER[i] = COLOR_BLACK;
     }
     cursor_x = 0;
     cursor_y = 0;
+    // Also reset colors when clearing
+    fg_color = COLOR_WHITE;
+    bg_color = COLOR_BLACK;
+}
+
+// Set cursor position (0-indexed)
+static void gfx_set_cursor(int x, int y) {
+    if (x >= 0 && x < SCREEN_COLS) cursor_x = x;
+    if (y >= 0 && y < SCREEN_ROWS) cursor_y = y;
+}
+
+// Clear from cursor to end of line (uses current bg color)
+static void gfx_clear_to_eol(void) {
+    for (int x = cursor_x; x < SCREEN_COLS; x++) {
+        gfx_draw_char(x * CHAR_WIDTH, cursor_y * CHAR_HEIGHT, ' ');
+    }
 }
 
 // Set colors
 static void gfx_set_colors(unsigned short foreground, unsigned short background) {
     fg_color = foreground;
     bg_color = background;
+}
+
+// Reset graphics to default state
+static void gfx_reset(void) {
+    fg_color = COLOR_WHITE;
+    bg_color = COLOR_BLACK;
+    cursor_x = 0;
+    cursor_y = 0;
+}
+
+// Full screen reset - clear to black and reset all state
+static void gfx_full_reset(void) {
+    fg_color = COLOR_WHITE;
+    bg_color = COLOR_BLACK;
+    for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
+        FRAMEBUFFER[i] = COLOR_BLACK;
+    }
+    cursor_x = 0;
+    cursor_y = 0;
 }
 
 #endif

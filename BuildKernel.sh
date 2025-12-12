@@ -11,8 +11,8 @@ MODE=${1:-"gui"}
 # Create disk image if it doesn't exist
 DISK_IMG="disk.img"
 if [ ! -f "$DISK_IMG" ]; then
-    echo "Creating 64MB disk image..."
-    qemu-img create -f raw "$DISK_IMG" 64M
+    echo "Creating 256MB disk image..."
+    qemu-img create -f raw "$DISK_IMG" 256M
 fi
 
 # Use SD controller so the PL181 driver can access the disk

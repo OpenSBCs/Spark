@@ -12,6 +12,7 @@ int prog_cp(const char *src, const char *dst);
 int prog_mv(const char *src, const char *dst);
 int prog_touch(const char *path);
 void prog_setup(void);
+void prog_vi(const char *filename);
 
 // Current working directory (simple implementation)
 static char current_dir[256] = "/";
@@ -53,8 +54,9 @@ int sh_exec(const char *cmd) {
             "\n"
             "  FILES\n"
             "    ls [path]     List directory contents\n"
-            "    cat <file>    Display file contents (external)\n"
+            "    cat <file>    Display file contents\n"
             "    mkf <file>    Create empty file\n"
+            "    vi <file>     Edit file with vi editor\n"
             "\n"
         );
     }
@@ -117,6 +119,18 @@ int sh_exec(const char *cmd) {
             }
         } else {
             writeOut("Usage: touch <filename>\n");
+        }
+    }
+    // vi editor
+    else if (strcmp(cmd, "vi") == 0) {
+        prog_vi((void*)0);  // Open vi with no file
+    }
+    else if (startsWith(cmd, "vi ")) {
+        const char *path = get_arg(cmd, "vi");
+        if (path) {
+            prog_vi(path);
+        } else {
+            prog_vi((void*)0);
         }
     }
     else if (cmd[0] != '\0') {
